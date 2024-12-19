@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UrgentEase - Priority Triage System</title>
+  <!-- Include Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <!-- Include Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- External CSS -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header Section -->
+    <div class="header text-center my-4">
+      <h1>UrgentEase - Priority Triage System</h1>
+      <p>Efficiently prioritize patients using ABHA ID and symptom analysis.</p>
+    </div>
+
+    <!-- Form to enter ABHA ID -->
+    <form id="abha-form" class="mb-4">
+      <div class="mb-3">
+        <label for="abha-id-input" class="form-label">Enter ABHA ID:</label>
+        <input type="text" id="abha-id-input" class="form-control" placeholder="Enter ABHA ID" required />
+      </div>
+      <button type="submit" class="btn btn-primary w-100">Fetch Patient Details</button>
+    </form>
+    
+    <!-- Container to display patient data -->
+    <div id="patient-data"></div>
+
+    <!-- Symptoms Input Form -->
+    <form id="symptoms-form" class="mb-4">
+      <div class="mb-3">
+        <label for="symptoms" class="form-label">Enter Symptoms (comma separated):</label>
+        <input type="text" id="symptoms" name="symptoms" class="form-control" placeholder="e.g., Mild Cough, Moderate Headache" required />
+        <button type="button" id="voice-input" class="btn btn-secondary mt-2">🎤 Voice Input</button>
+
+      </div>
+
+      <!-- Language Selection -->
+      <div class="mb-3">
+        <label for="language" class="form-label">Preferred Language</label>
+        <select id="language" class="form-select">
+          <option value="en">English</option>
+          <option value="hi">Hindi</option>
+          <option value="bn">Bengali</option>
+          <option value="ta">Tamil</option>
+        </select>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="d-flex justify-content-between">
+        <button type="button" class="btn btn-primary" id="analyze-symptoms">Analyze Symptoms</button>
+        <button type="submit" class="btn btn-secondary">Refresh</button>
+      </div>
+    </form>
+
+    <!-- Symptom Analysis Result -->
+    <div id="analysis-result" class="mt-4" style="display: none;">
+      <h3>Symptom Analysis Result</h3>
+      <div id="severity"></div>
+      <div id="severity-color" style="padding: 10px; color: white;"></div>
+    </div>
+
+    <!-- Priority Score Result -->
+    <div class="priority-result" id="result" style="display: none;">
+      <p class="score">High Priority</p>
+      <p>Immediate medical attention required.</p>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="text-center mt-4">
+      &copy; 2024 Tri Bytes | All Rights Reserved
+    </footer>
+  </div>
+
+  <!-- Include Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- External JS -->
+  <script src="script.js"></script>
+  <script src="app.js"></script>
+  <!-- External JS -->
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // Handle Analyze Symptoms button click
+    document.getElementById("analyze-symptoms").addEventListener("click", () => {
+      const symptomsInput = document.getElementById("symptoms").value.trim();
+      const symptoms = symptomsInput.split(",").map(s => s.trim());
+
+      if (symptoms.length === 0 || !symptoms[0]) {
+        alert("Please enter at least one symptom.");
+        return;
+      }
+
+      fetch("http://localhost:3000/getPriority", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ symptoms })
+      })
+      .then(response => response.json())
+      .then(data => {
+        const resultDiv = document.getElementById("analysis-result");
+        const severityDiv = document.getElementById("severity");
+        const severityColorDiv = document.getElementById("severity-color");
+
+        resultDiv.style.display = "block";
+        severityDiv.innerHTML = `<strong>Priority:</strong> ${data.priority}`;
+
+        // Adjust color based on severity
+        switch (data.priority) {
+          case "Emergency":
+            severityColorDiv.style.backgroundColor = "red";
+            severityColorDiv.innerHTML = "Immediate medical attention required!";
+            break;
+          case "Moderate":
+            severityColorDiv.style.backgroundColor = "orange";
+            severityColorDiv.innerHTML = "Consult a doctor soon.";
+            break;
+          case "Mild":
+            severityColorDiv.style.backgroundColor = "green";
+            severityColorDiv.innerHTML = "Monitor symptoms, rest as needed.";
+            break;
+          default:
+            severityColorDiv.style.backgroundColor = "gray";
+            severityColorDiv.innerHTML = "No significant symptoms detected.";
+        }
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        alert("Failed to analyze symptoms. Please try again.");
+      });
+    });
+
+    // Prevent form refresh on "Refresh" button click
+    document.getElementById("symptoms-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      document.getElementById("symptoms").value = "";
+      document.getElementById("analysis-result").style.display = "none";
+    });
+  });
+</script>
+</body>
+</html>
